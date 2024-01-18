@@ -197,6 +197,6 @@ Link to video: [https://youtu.be/5YHttbBpcvU](https://youtu.be/pX4nkPS-MK0)
 
 ## Acknowledgements
 
-- [Min/Max-Heap Structure + Priority Queues] (https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/). 
+- [Min/Max-Heap Structure + Priority Queues](https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/). 
 - [Utility values calculation](https://www.amazon.de/-/en/Daniel-Kahneman/dp/0374533555).
 - Acknowledgement of Professor R. for being an insightful resource in the construction of this project.
