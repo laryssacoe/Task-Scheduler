@@ -144,13 +144,26 @@ Defines the commands that will send information to the Blynk server to turn the 
 
 ## Functionality
 
-The user (computer) is connected to the Flask server to receive and submit information, this way, when the user send the command for the light to turn ON in the streaming page, the Flask serve sends this information to the Blynk server, which is connected by the ID Token.
+The scheduler receives information from the user to organize their day and the list of tasks they have in an optimal order for the user. The information given to the scheduler should contain the starting time of the day and at least four characteristics (attributes) of each task among the seven possible characteristics of a task described below.
 
-After that, the Bynk server will connect to the button (pin v0), changing the status of the light and sending this information back to the user. The Blynk app simulates and IoT physical device that can be connected through Wi-Fi if there was a need for the physical components.
 
-![Imgur](https://i.imgur.com/0nWDGnp.png)
+    1. id: identifier of the task
+    2. description: simple description of the task in text, for example, "Go to the gym"
+    3. duration: how long, in minutes, a task takes to be completed
+    4. dependencies: list of the tasks that have to be done before this one can be done
+    5. fixed_hour: predetermined time of a task to start (constrained)
+    6. type: category of a task, between academic ('A'), essential ('E'), and personal ('P' - default)
+    7. latest_start_time: the latest starting time of a task 
+    8. status: default = 'N' (user will not input)
+    9. priority: priority value of the task (computed based on other attributes - user will not input)
 
-This image exemplifies how the Flask web app connects to the IoT platform. 
+As the scheduler is initiated to give the order of the tasks the user gives, each task is initialized with its given attributes. After each task is initialized, the scheduler dynamically computes the priority values of each task based on its type, duration, and number of dependencies and the given conditional utility function, explained in detail in the priority value section. As the initial priorities are computed, the scheduler takes all of them and initializes two empty heaps as the priority queues. In the priority queue, we have the characteristics of a min-heap, which will take the tasks that have fixed_hour as one of their attributes; then, on the second priority queue, we have a max-heap, which will take the 'flexible' tasks, meaning those that do not have a predetermined starting time. Finally, the scheduler runs, and it enters a loop until all the tasks are completed, which in the scheduler will be represented by not having any unscheduled tasks (those that have not been inserted into any heap) or any of the heaps not being empty. The initial current time will be the starting time of the user's day. 
+
+For each iteration, as the loop continues until there are no tasks to be done (the termination condition is reached), the scheduler checks if any of the tasks with a status of 'not started' can now be inserted into the heap. The condition for this to happen is that the task has no dependencies; then, the scheduler will check if it has a predetermined initial time so the task is inserted in the correct heap. Then, as the tasks are ready to be executed in the iteration, it moves on to the possible cases that a task will fit, which determines the final result as if each task fits, they are output in order.
+
+
+![Imgur](https://i.imgur.com/TlgVAdN.jpeg)
+This image exemplifies the functionality of the Task Scheduler in steps.
 
 
 
@@ -158,10 +171,11 @@ This image exemplifies how the Flask web app connects to the IoT platform.
 
 In this video, I showcase the functionality of the algorithm and the reasoning behind its constructions as well as its advantages and limitations.
 
-Link to video: https://youtu.be/5YHttbBpcvU
-
+Link to video: [https://youtu.be/5YHttbBpcvU](https://youtu.be/pX4nkPS-MK0)
 
 ## Acknowledgements
 
+- [Min/Max-Heap Structure + Priority Queues] Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2009). Introduction to algorithms (3rd ed.). 
+- [Utility values calculation]Kahneman, D. (2013). Chapters 26 and 29, In Thinking, fast and slow. New York: Farrar, Straus, and Giroux.
  - [Blynk Documentation](https://docs.blynk.io/en/blynk.cloud/get-datastream-value)
  - [CSS Resources](https://freefrontend.com/css-code-examples/)
