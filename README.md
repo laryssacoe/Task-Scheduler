@@ -33,7 +33,7 @@ In order to run this project, you need to:
 
 * Download the Source notebook and run OR go to GitHub Repository, get the URL and input: 
 ```bash
-  git clone <(https://github.com/laryssacoe/Flask-web-app-with-IoT-integration.git)>
+  git clone <(https://github.com/laryssacoe/Task-Scheduler.git)>
 ```
 
 ### Libraries needed 
