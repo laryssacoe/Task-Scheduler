@@ -49,96 +49,118 @@ The libraries included are built-in Python:
 
 ## Usage/Examples
 
-Demonstration of code snippets and their purpose. 
+Demonstration of code snippet and its purpose. 
 
-* Sign Up functionality: 
-Defines the route to sign up page that will request the user to create an username and password and will save the the values in a tuple in the table that will be used to match the credentials to the user in the redirecting of login page. 
-
-```python
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        conn = sqlite3.connect('users.db')
-        c = conn.cursor()
-
-        # asks for the insertion of username and password values as a tuple stored in users
-        c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
-
-        conn.commit()
-        conn.close()
-
-        # after sign up, redirects the user to do their login
-        return redirect(url_for('login'))
-
-    return render_template('signup.html')
-```
+* Running the Scheduler case 1: 
+Defines the dynamic for choosing a task to be performed based on whether there are fixed tasks or not in the total tasks of the user. 
 
 
-* Streaming Commands: 
-Defines the commands that will send information to the Blynk server to turn the light ON and OFF and creates a function that will update the status in the streaming page by getting this information from the Blynk server.
+```python  
+def run_scheduler(self, starting_time, final_time=60*24):
+"""
+Prints the order of the schedule based on the input of the tasks and the cases. It runs the loop until all tasks have been done.
 
-```JavaScrpit
-	// defines the function that turns the light on in IoT integration
-	function turnLightOn() {
-		// uses XML Http and the GET request to update data from the blink server API and make value of light = 1
-		var xhttp = new XMLHttpRequest();
-		xhttp.open("GET", "https://blynk.cloud/external/api/update?token=9htotNtrt1lrBSfxk8gwZNA5S8iMlMkY&v0=1", true);
-		// sends new value
-		xhttp.send();
-		// calls the update light status function to automatically change the status to 1 or 'on'
-		updateLightStatus();
-	}
+Parameters 
+-----------
+starting_time: int 
+    Start of the day in minutes
+final_time: int
+    End of the day in minutes (default as midgnight)
+"""
 
-    // defines the function that turns light off in IoT integration
-	function turnLightOff() {
-		var xhttp = new XMLHttpRequest();
-		// uses XML Http and the GET request to update data from the blynk server API and make value of light = 0
-		xhttp.open("GET", "https://blynk.cloud/external/api/update?token=9htotNtrt1lrBSfxk8gwZNA5S8iMlMkY&v0=0", true);
-		// sends the new value
-			xhttp.send();
-		// calls the update light status function to automatically change the status to 0 or 'off'
-		updateLightStatus();
-	}
+end_time = final_time
+tot_utility = 0
+current_time = starting_time
+print("Running a simple scheduler:\n")
 
-	// defines the function that will update constantly and display the status of the light
-		function updateLightStatus() {
 
-	// uses XML Http to get the new request of data from the Blynk API server to update light status
-    var xhttp = new XMLHttpRequest();
+# checks if there are no unscheduled tasks and the heaps are still not empty
+while self.check_unscheduled_tasks() or self.priority_queue.heapsize > 0 or self.fixed_priority_queue.heapsize > 0:
 
-    // defines a function that will only be called by the change of light state in the XMLHttp request and display its status
-    xhttp.onreadystatechange = function() { // calls the function upon change using "xhttp.onreadystate" property of XML HTTP
+    self.get_tasks_ready() # inputs the tasks in the heaps if they are ready to be in progress
 
-        // checks if the "readystate" xmlhttp property is done (4) and the request of data was successful (200)
-        if (this.readyState == 4 && this.status == 200) {
+    # case 1: both fixed and priority heaps are not empty
+    if self.priority_queue.heapsize > 0 and self.fixed_priority_queue.heapsize > 0:
 
-            // if so, assigns the variable response to a response text that will be used to display status
-            var responseText = this.responseText;
+	task_fixed = self.fixed_priority_queue.heap[0]
+	task_regular = self.priority_queue.heap[0]
+	alloted_duration = task_fixed.fixed_hour - current_time
 
-            // checks the status of the light by the response text, if the response is '1', attatches the value "on" to the string lightStatus
-            // if not, assigns the value "off" to be displayed
-            var lightStatus = responseText == "1" ? "on" : "off";
+	# case 1.1: for which the current time is equal the first task in fixed_hour heap
+	# carry out with the fixed task
+	if current_time == task_fixed.fixed_hour:  
 
-            // attributes an identifier to the HTML element light-status that will return the content setup
-            // in this case, the content is the status of the light in string plus the actual value define in variable "lightStatus"
-            document.getElementById("light-status").innerHTML = "The status of the light is currently " + lightStatus + "!";
+	    task = self.fixed_priority_queue.heappop()    
+	    print(f"🕰t={self.time_conversion(current_time)}")
+	    print(f"\t started '{task.description}' for {task.duration} mins...")
+	    tot_utility += task.priority  
+	    current_time += task.duration
+	    print(f"\t✅ t={self.time_conversion(current_time)}, task completed with {task.priority} utils!") 
+	    self.remove_dependency(task.id) 
+	    task.status = self.COMPLETED
 
-			// checks the status of the light to assign icon id to the specific png link
-            if (lightStatus == "on") {
-                document.getElementById("light-icon").src = "https://toppng.com/uploads/preview/light-bulb-on-off-png-11553940319kdxsp3rf0i.png";
-            } else {
-                document.getElementById("light-icon").src = "https://toppng.com/uploads/preview/light-bulb-on-off-png-11553939967conkckniqn.png";
-            }
-        }
-    };
+	# case 1.2: for which doing the first priority task will not surpass the fixed hour task 
+	# carry out with first task in priority queue
+	elif current_time + task_regular.duration < alloted_duration: 
 
-    // initializes a new GET request of data to the Blynk server and sends the request to get the new value of the light
-    xhttp.open("GET", "https://blynk.cloud/external/api/get?token=9htotNtrt1lrBSfxk8gwZNA5S8iMlMkY&v0", true);
-    xhttp.send();
-}
+	    if current_time + task_regular.duration >= end_time: 
+		print(f"🕰t={self.time_conversion(current_time)}")
+		print(f"\t 😔 Sorry, you did not complete all the planned tasks for today in the alloted time, the final time was {end_time//60}h{end_time%60:02d} and the total utility is {tot_utility} utils.")
+		print(f"\t The tasks still missing are: ")
+		
+		i = 1
+		for algo in self.priority_queue.heap: 
+		    print(f"\t \t {i}. '{algo.description}', task id = {algo.id}") 
+		    i += 1
+		break
+
+	    task = self.priority_queue.heappop()    
+	    print(f"🕰t={self.time_conversion(current_time)}")
+	    print(f"\tstarted '{task.description}' for {task.duration} mins...")
+	    tot_utility += task.priority  
+	    current_time += task.duration
+	    print(f"\t✅ t={self.time_conversion(current_time)}, task completed with {task.priority} utils!") 
+	    self.remove_dependency(task.id) 
+	    task.status = self.COMPLETED
+
+	# case 1.3: for which doing the first in priority queue would surpass the time of the fixed hour
+	else: 
+	    
+	    # searches if there is another (other than firts-priority) task of high priority 
+	    # that can be done in between this time
+	    boolean = self.search_heap(alloted_duration)
+
+	    if boolean is True: # if so, increases the other task priority and carries out with task
+
+		if current_time + self.priority_queue.heap[0].duration >= end_time: 
+		    print(f"🕰t={self.time_conversion(current_time)}")
+		    print(f"\t 😔 Sorry, you did not complete all the planned tasks for today in the alloted time, the final time was {end_time//60}h{end_time%60:02d} and the total utility is {tot_utility} utils.")
+		    print(f"\t The tasks still missing are: ")
+			    
+		    i = 1
+		    for algo in self.priority_queue.heap: 
+			print(f"\t \t {i}. '{algo.description}', task id = {algo.id}") 
+			i += 1
+		    break
+
+		task = self.priority_queue.heappop()   
+		print(f"🕰t={self.time_conversion(current_time)}")
+		print(f"\tstarted '{task.description}' for {task.duration} mins...")
+		tot_utility += (task.priority/1000)  
+		current_time += task.duration
+		print(f"\t✅ t={self.time_conversion(current_time)}, task completed with {(task.priority/1000)} utils!") 
+		self.remove_dependency(task.id) 
+		task.status = self.COMPLETED
+
+	    # if no task is found that matches this duration, take a break before the fixed hour task
+	    else: 
+
+		print(f"🕰t={self.time_conversion(current_time)}")
+		current_time += alloted_duration
+		if alloted_duration > 60: 
+		    print(f"\t✨ Great! You have time to take a nap for {self.time_conversion(alloted_duration)} mins until {self.time_conversion(task_fixed.fixed_hour)}")
+		else: 
+		    print(f"\t Resting (Pomodoro break) before task: {task_fixed.description} for {alloted_duration} mins until {self.time_conversion(task_fixed.fixed_hour)}")
 ```
 
 
@@ -175,7 +197,6 @@ Link to video: [https://youtu.be/5YHttbBpcvU](https://youtu.be/pX4nkPS-MK0)
 
 ## Acknowledgements
 
-- [Min/Max-Heap Structure + Priority Queues] Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. (2009). Introduction to algorithms (3rd ed.). 
-- [Utility values calculation]Kahneman, D. (2013). Chapters 26 and 29, In Thinking, fast and slow. New York: Farrar, Straus, and Giroux.
- - [Blynk Documentation](https://docs.blynk.io/en/blynk.cloud/get-datastream-value)
- - [CSS Resources](https://freefrontend.com/css-code-examples/)
+- [Min/Max-Heap Structure + Priority Queues] (https://mitpress.mit.edu/9780262046305/introduction-to-algorithms/). 
+- [Utility values calculation](https://www.amazon.de/-/en/Daniel-Kahneman/dp/0374533555).
+- Acknowledgement of Professor R. for being an insightful resource in the construction of this project.
