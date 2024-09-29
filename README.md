@@ -14,10 +14,7 @@ Assignment project on DSA that takes a list of tasks from the user as input and 
     
 ## About the Project
 
-The objective of this project was to develop a small Flask web application that integrates an IoT device simulated by an IoT platform (Blynk was used). 
-
-The web app serves as a control server to the theoretical device, meaning in the 'Streaming' Page, the user has access to the eletronic device that intends to simulate a robot, in this case, a LED was used that would get the commands from both the web app server as well as the Blynk server to connect to the device by Wi-Fi and be able to turn the light ON and OFF through the computer.
-
+The objective of this project was to create a simple application focusing on practicality to aid users in organizing their day based on their tasks and the available time.
 
 
 ## Built With
